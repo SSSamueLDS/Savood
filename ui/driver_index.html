@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous"/>
+</head>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+
+<body>
+    
+<!-- navbar starts  -->
+<div id="app">
+  <Navbar></Navbar>
+<!-- navbar ends  -->
+
+<h1 class = "m-5 "> Welcome to Savood {{userNameSession}}! </h1>
+
+
+<div class="container mt-5">
+
+  <div id="toggle">
+    <button @click="toggleCurrent" class="btn btn-primary mx-1">Current Delivery</button>
+    <button @click="toggleNew" class="btn btn-success mx-1">Delivery Requests</button>
+    <button @click="toggleHistory" class="btn btn-warning mx-1">Past Deliveries</button>
+
+    <!-- Current Delivery -->
+    <div id="toggle" class="mt-3 mx-auto" v-show="showCurrent">
+      <h3>Current Delivery</h3>
+      
+      <h5 v-if="current_message" class="text-center">{{current_message}}</h5>
+      <h5 v-if="current_message" class="text-center">{{current_message}}</h5>
+      <!--current_orders-->
+      <div class="card d-flex mx-auto mb-3" v-for="current_order of current_orders" v-if="current_orders">
+        <div class="card-header">
+          Order #{{current_order.order_id}}
+        </div>
+        <div class="row">
+          <div class="col-3 d-flex">
+            <img :src="current_order.img_url ? current_order.img_url : './img/empty.png'" class="img-fluid">
+          </div>
+          <div class="col-9">
+          <div class="card-body">
+            <div class="row">
+                <div class="col"><p class="card-text">{{current_order.dish_name}}</p></div>
+                <div class="col" style="text-align: right; color: orange;"><h5>{{current_order.status}}</h5></div> 
+            </div>
+
+            <br>
+
+            <div class="row">
+              <div class="col"><h5 class="card-title">Foodbank: {{current_order.foodbank_name}}</h5></div>
+              <div class="col" style="text-align: left;"><h5>Driver: {{current_order.driver_name ? current_order.driver_name : 'No driver yet'}}</h5></div> 
+              <div class="col" style="text-align: right;">Order Created {{current_order.created_at}}</div> 
+            </div>
+            <div class="row">
+              <div class="col"><p class="card-text">{{current_order.foodbank_address}}</div>
+              <div class="col" style="text-align: left;"></div> 
+              <div class="col" style="text-align: right;"></div> 
+            </div>
+            <div class="row">
+              <div class="col"><p class="card-text">{{current_order.foodbank_phone_number}}</p></div>
+              <div class="col" style="text-align: left;">{{current_order.driver_phone_number}}</div> 
+              <div class="col" style="text-align: right;">
+                <button class="btn btn-primary mx-1" v-if="current_order.status == 'accepted'" @click="setPickedUpOrder(current_order.order_id)">Picked up</button>
+                <button class="btn btn-primary mx-1" v-if="current_order.status == 'picked up'" @click="setDeliveredOrder(current_order.order_id)">Delivered</button>
+              </div> 
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery Requests -->
+    <div id="toggle" class="mt-3" v-show="showNew">
+      <h3>Delivery Requests</h3>
+
+      <div class="text-center mb-3">
+        <form>
+          <label for="region"><h4>Select Region:</h4></label>
+          <select name="region" id="region" @change="changeRegion($event)" style="width:100px;height:30px;" class="mx-3">
+            <option value="North">North</option>
+            <option value="South">South</option>
+            <option value="East">East</option>
+            <option value="West">West</option>
+            <option value="Central">Central</option>
+            <option value="North-East">North-East</option>
+            <option value="North-East">North-East</option>
+          </select>
+        </form>
+      </div>
+
+      <h5 class="text-center" v-if="posting_message">{{posting_message}}</h5>
+
+      <div class="card d-flex mx-auto mb-3" v-for="posting of postings" v-if="postings">
+        <div class="card-header">
+          Order #{{posting.order_id}}
+        </div>
+        <div class="row">
+          <div class="col-3 d-flex">
+            <img :src="posting.img_url ? posting.img_url : './img/empty.png'" class="img-fluid">
+          </div>
+          <div class="col-9">
+          <div class="card-body">
+            <div class="row">
+                <div class="col"><p class="card-text">{{posting.dish_name}}</p></div>
+                <div class="col" style="text-align: right; color: orange;"><h5>{{posting.status}}</h5></div> 
+            </div>
+
+            <br>
+
+            <div class="row">
+              <div class="col"><h5 class="card-title">Foodbank: {{posting.foodbank_name}}</h5></div>
+              <div class="col" style="text-align: left;"><h5>Driver: {{posting.driver_name ? posting.driver_name : 'No driver yet'}}</h5></div> 
+              <div class="col" style="text-align: right;">Order Created {{posting.created_at}}</div> 
+            </div>
+            <div class="row">
+              <div class="col"><p class="card-text">{{posting.foodbank_address}}</div>
+              <div class="col" style="text-align: left;"></div> 
+              <div class="col" style="text-align: right;"></div> 
+            </div>
+            <div class="row">
+              <div class="col"><p class="card-text">{{posting.foodbank_phone_number}}</p></div>
+              <div class="col" style="text-align: left;">{{posting.driver_phone_number}}</div> 
+              <div class="col" style="text-align: right;">
+                <button class="btn btn-primary mx-1" v-if="posting.status == 'ordered'" @click="setChosenOrder(posting.order_id)">Accept</button>
+              </div> 
+            </div>
+          </div>
+          </div>
+          </div>
+        </div>
+      </div>
+      </div>
+      
+    </div> 
+    
+    <!-- Past Deliveries -->
+    <div id="toggle" class="mt-3" v-show="showHistory">
+      <div id="main-container" class="container">
+        <h3>Past Deliveries</h3>
+        <h5 v-if="previous_message" class="text-center">{{previous_message}}</h5>
+        <table v-if="previous_orders" class='table table-striped border-1'>
+            <thead class='table-dark'>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Restaurant Name</th>
+                    <th>Foodbank Name</th>
+                    <th>Status</th>
+                    
+                </tr>
+            </thead>
+            <tbody id="orderTable">
+              <tr v-for = "previous_order of previous_orders">
+                <td>{{previous_order.order_id}}</td>
+                <td>{{previous_order.created_at}}</td>
+                <td>{{previous_order.restaurant_name}}</td>
+                <td>{{previous_order.foodbank_name}}</td>
+                <td>{{previous_order.status}}</td>
+              </tr>
+            </tbody>
+      </table>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- Footer -->
+  <div class="container">
+    <footer class="row row-cols-1 row-cols-sm-2 row-cols-md-5 py-5 my-5 border-top text-center">
+      <p class="text-muted">Savood © 2023</p>
+    </footer>
+  </div>
+</div>
+</div>
+
+<!-- <script src="app.js"></script> -->
+
+
+<script>
+  ORDER_API_URL = 'http://localhost:5004'
+  ACCEPT_ORDER_API_URL = 'http://localhost:5009'
+  DRIVER_API_URL = 'http://localhost:5003'
+  const app = Vue.createApp({
+      data() {
+        return {
+          userId: null,
+          userType: null,
+          userNameSession: null,
+
+          showCurrent: true,
+          showNew: false,
+          showHistory: false,
+          showAccepted: true,
+          showPickedUp: false,
+
+          driver_availability: null,
+
+          driver_availability: null,
+
+          //history
+          previous_orders: null,
+          previous_message: null,
+
+          //current
+          current_orders: null,
+          current_message: null,
+
+          //postings
+          postings: null,
+          posting_region: "North",
+          posting_message: null,
+
+          //accept order
+          chosen_order_id: null,
+
+          //pick up order
+          picked_up_order_id: null,
+
+          //delivered order
+          delivered_order_id: null,
+
+          status: "Accepted",
+        };
+      },
+
+      methods: {
+        toggleCurrent() {
+          this.showCurrent = true;
+          this.showNew = false;
+          this.showHistory = false;
+          this.fetchCurrentOrder();
+        },
+        async toggleNew() {
+          this.showCurrent = false;
+          this.showNew = true;
+          this.showHistory = false;
+          await this.getDriverAvailability();
+          await this.getDriverAvailability();
+          this.fetchOrdersbyRegion();
+        },
+        toggleHistory() {
+          this.showCurrent = false;
+          this.showNew = false;
+          this.showHistory = true;
+          this.fetchPreviousOrders();
+        },
+
+        changeRegion(event){
+          this.posting_region = event.target.value
+          console.log(this.posting_region)
+          this.fetchOrdersbyRegion();
+        },
+
+        async setChosenOrder(orderId){
+          this.chosen_order_id = orderId;
+          console.log(this.chosen_order_id);
+          await this.submitAcceptOrder();
+          this.toggleCurrent();
+        },
+
+        async setPickedUpOrder(orderId){
+          this.picked_up_order_id = orderId;
+          console.log(this.picked_up_order_id);
+          await this.submitPickedUpOrder();
+          this.toggleCurrent();
+        },
+
+        async setDeliveredOrder(orderId){
+          this.delivered_order_id = orderId;
+          console.log(this.delivered_order_id);
+          await this.submitDeliveredOrder();
+          this.toggleCurrent();
+        },
+
+        async getDriverAvailability(){
+          const serviceURL = `${DRIVER_API_URL}/get_driver/${this.userId}`;
+          try {
+              const response = await fetch(serviceURL, { method: 'GET' });
+              const result = await response.json();
+              this.driver_availability = result.data.availability
+              console.log(result);
+              return Promise.resolve();
+            } catch (error) {
+              this.message = error.message;
+              return Promise.reject(error);
+            }
+
+        },
+
+        async getDriverAvailability(){
+          const serviceURL = `${DRIVER_API_URL}/get_driver/${this.userId}`;
+          try {
+              const response = await fetch(serviceURL, { method: 'GET' });
+              const result = await response.json();
+              this.driver_availability = result.data.availability
+              console.log(result);
+              return Promise.resolve();
+            } catch (error) {
+              this.message = error.message;
+              return Promise.reject(error);
+            }
+
+        },
+
+      //accept orders
+        async submitAcceptOrder(){
+          const serviceURL = `${ACCEPT_ORDER_API_URL}/accept_order`;
+            try {
+              const response = await fetch(serviceURL, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  order_id: this.chosen_order_id,
+                  driver_id: this.userId,
+                }),
+              });
+
+              result = await response.json();
+              console.log(result);
+              return Promise.resolve();
+            } catch (error) {
+              this.message = error.message;
+              return Promise.reject(error);
+            }
+
+        },
+
+        async submitPickedUpOrder() {
+          const serviceURL = `${ACCEPT_ORDER_API_URL}/update_order`;
+          try {
+              const response = await fetch(serviceURL, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  order_id: this.picked_up_order_id,
+                  driver_id: this.userId,
+                  status: "picked up",
+                }),
+              });
+
+              result = await response.json();
+              console.log(result);
+              return Promise.resolve();
+            } catch (error) {
+              this.message = error.message;
+              return Promise.reject(error);
+            }
+        },
+
+        async submitDeliveredOrder() {
+          const serviceURL = `${ACCEPT_ORDER_API_URL}/update_order`;
+          try {
+              const response = await fetch(serviceURL, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  order_id: this.delivered_order_id,
+                  driver_id: this.userId,
+                  status: "delivered",
+                }),
+              });
+
+              result = await response.json();
+              console.log(result);
+              return Promise.resolve();
+            } catch (error) {
+              this.message = error.message;
+              return Promise.reject(error);
+            }
+        },
+        
+        async fetchPreviousOrders(){
+        
+          const serviceURL = `${ORDER_API_URL}/get_driver_past_deliveries/${this.userId}`
+
+          try {
+            const response = await fetch(serviceURL, { method: 'GET' });
+            const result = await response.json();
+
+            if (result.code === 200) {
+              console.log('status 200')
+              this.previous_orders = result.data.orders;
+              this.previous_message = null
+              console.log(this.previous_orders)
+            } else if (result.code === 404) {
+              this.previous_orders = null;
+              this.previous_message = result.message;
+            } else {
+              throw response.status;
+            }
+          } catch (error) {
+            console.log('error')
+            this.error = `There is a problem retrieving previous orders data, please try again later.<br />${error}`;
+            }
+        },
+
+        async fetchCurrentOrder(){
+          const serviceURL = `${ORDER_API_URL}/get_current_deliveries/${this.userId}`
+
+          try {
+            const response = await fetch(serviceURL, { method: 'GET' });
+            const result = await response.json()
+            console.log(result.code)
+            if (result.code === 200) {
+              console.log('status 200')
+              this.current_orders = result.data.orders;
+              this.current_message = null
+            } else if (result.code === 404) {
+              this.current_orders = null
+              this.current_message = "You do not have any active deliveries"
+              this.current_message = "You do not have any active deliveries"
+              console.log(current_message)
+            } else {
+              throw response.status;
+            }
+          } catch (error) {
+            console.log('error')
+            this.error = `There is a problem retrieving previous orders data, please try again later.<br />${error}`;
+            }
+        },
+
+        async fetchOrdersbyRegion(){
+          
+          const serviceURL = `${ORDER_API_URL}/get_order_by_region/${this.posting_region}?status=ordered`
+
+          try {
+            const response = await fetch(serviceURL, { method: 'GET' });
+            const result = await response.json()
+            console.log(result)
+            if (result.code === 200) {
+              console.log('status 200')
+              this.postings = result.data.orders;
+              this.posting_message = null
+              console.log(this.postings)
+            } else if (result.code === 404) {
+              this.postings = null
+              this.posting_message = result.message
+              console.log(this.posting_message)
+            } else {
+              throw response.status;
+            }
+          } catch (error) {
+            console.log('error')
+            this.error = `There is a problem retrieving previous orders data, please try again later.<br />${error}`;
+            }
+        }
+      },
+
+    created() {
+      const saveduserId = localStorage.getItem('userId');
+      const saveduserType = localStorage.getItem('userType');
+      const saveduserNameSession = localStorage.getItem('userNameSession')
+      console.log(saveduserId, saveduserType)
+      if (saveduserId) {
+          this.userId = parseInt(saveduserId);
+      }
+      this.userType = saveduserType
+      this.userNameSession = saveduserNameSession
+      console.log(this.userId, this.userType)
+
+      if (!this.userId && this.userType != 'driver'){
+          window.location.href = './signUp.html'
+      }
+      this.toggleCurrent();
+
+    }
+    
+  });
+  </script>
+
+<script src="./UI_COMPONENTS/Navbar.js"></script>
+
+<script>app.mount('#app');</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+
+
+</body>
+</html>

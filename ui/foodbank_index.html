@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous"/>
+</head>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<body>
+
+<!-- Vue app starts  -->
+<div id="app">
+
+  <Navbar></Navbar>
+
+  <h1 class = "m-5 ">Welcome to Savood {{userNameSession}}!</h1>
+
+  <div class="container mt-5">
+    <div>
+      <button @click="toggleCurrent" class="btn btn-primary mx-1">Current Order</button>
+      <button @click="toggleListing" class="btn btn-success mx-1">Available Orders</button>
+      <button @click="toggleHistory" class="btn btn-warning mx-1">Past Orders</button>
+    </div>
+
+    <!-- current orders-->
+    <div id="toggle" v-show="showCurrent" class="mt-3 mx-auto">
+      <!-- {{CurrentOrders}} -->
+
+      <h3>Current Order</h3>
+      <!--CurrentOrders-->
+      <h5 v-if="current_message" class="text-center">{{current_message}}</h5>
+      <div class="card d-flex mx-auto mb-3" v-for="CurrentOrder of CurrentOrders" v-if="CurrentOrders">
+        <div class="card-header">
+          Order #{{CurrentOrder.order_id}}
+        </div>
+        <div class="row">
+          <div class="col-3 d-flex">
+            <img :src="CurrentOrder.img_url ? CurrentOrder.img_url : './img/empty.png'" class="img-fluid">
+          </div>
+          <div class="col-9">
+          <div class="card-body">
+            <div class="row">
+                <div class="col"><p class="card-text">{{CurrentOrder.dish_name}}</p></div>
+                <div class="col" style="text-align: right; color: orange;"><h5>{{CurrentOrder.status}}</h5></div> 
+            </div>
+
+            <br>
+
+            <div class="row">
+              <div class="col"><h5 class="card-title">Foodbank: {{CurrentOrder.foodbank_name}}</h5></div>
+              <div class="col" style="text-align: left;"><h5>Driver: {{CurrentOrder.driver_name ? CurrentOrder.driver_name : 'No driver yet'}}</h5></div> 
+              <div class="col" style="text-align: right;">Order Created {{CurrentOrder.created_at}}</div> 
+            </div>
+            <div class="row">
+              <div class="col"><p class="card-text">{{CurrentOrder.foodbank_address}}</div>
+              <div class="col" style="text-align: left;"></div> 
+              <div class="col" style="text-align: right;"></div> 
+            </div>
+            <div class="row">
+              <div class="col"><p class="card-text">{{CurrentOrder.foodbank_phone_number}}</p></div>
+              <div class="col" style="text-align: left;">{{CurrentOrder.driver_phone_number}}</div> 
+              <div class="col" style="text-align: right;">
+                <button class="btn btn-primary mx-1" v-if="CurrentOrder.status == 'delivered'" @click="setDoneOrder(CurrentOrder.order_id)">Done</button>
+              </div> 
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    
+    <div v-show="showListing" class="mt-3">
+      <!-- {{AvailableOrders}} -->
+      <h3>Available Orders</h3>
+      <h5 v-if="available_message" class="text-center">{{available_message}}</h5>
+      <!--AvailableOrders-->
+      <div class="card d-flex mx-auto mb-3" v-for="AvailableOrder of AvailableOrders" v-if="AvailableOrders">
+        <div class="card-header">
+          Order #{{AvailableOrder.order_id}}
+        </div>
+        <div class="row">
+          <div class="col-3 d-flex">
+            <img :src="AvailableOrder.img_url ? AvailableOrder.img_url : './img/empty.png'" class="img-fluid">
+          </div>
+          <div class="col-9">
+          <div class="card-body">
+            <div class="row">
+                <div class="col"><p class="card-text">{{AvailableOrder.dish_name}}</p></div>
+                <div class="col" style="text-align: right; color: orange;"><h5>{{AvailableOrder.status}}</h5></div> 
+            </div>
+
+            <br>
+
+            <div class="row">
+              <div class="col"><h5 class="card-title">Foodbank: {{AvailableOrder.foodbank_name}}</h5></div>
+              <div class="col" style="text-align: left;"><h5>Driver: {{AvailableOrder.driver_name ? AvailableOrder.driver_name : 'No driver yet'}}</h5></div> 
+              <div class="col" style="text-align: right;">Order Created {{AvailableOrder.created_at}}</div> 
+            </div>
+            <div class="row">
+              <div class="col"><p class="card-text">{{AvailableOrder.foodbank_address}}</div>
+              <div class="col" style="text-align: left;"></div> 
+              <div class="col" style="text-align: right;"></div> 
+            </div>
+            <div class="row">
+              <div class="col"><p class="card-text">{{AvailableOrder.foodbank_phone_number}}</p></div>
+              <div class="col" style="text-align: left;">{{AvailableOrder.driver_phone_number}}</div> 
+              <div class="col" style="text-align: right;">
+                <button class="btn btn-primary mx-1" v-if="AvailableOrder.status == 'pending'" @click="setChosenOrder(AvailableOrder.order_id)">Place Order</button>
+              </div> 
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+      <!-- Display available orders details -->
+    </div>
+
+    <div v-show="showHistory" class="mt-3" >
+      <!-- Display past orders details -->
+      <div v-show="showHistory">
+        <h3 class="mt-3">Past Orders</h3>
+        <h5 v-if="previous_message" class="text-center">{{previous_message}}</h5>
+        <table class="table table-striped border-1" v-if="previous_orders">
+          <thead class="table-dark">
+            <tr>
+              <th>Order ID</th>
+              <th>Date</th>
+              <th>Restaurant Name</th>
+              <th>Dish Name</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="previous_order of previous_orders">
+              <td>{{ previous_order.order_id }}</td>
+              <td>{{ previous_order.created_at }}</td>
+              <td>{{ previous_order.restaurant_name }}</td>
+              <td>{{ previous_order.dish_name }}</td>
+              <td>{{ previous_order.status }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <footer class="row row-cols-1 row-cols-sm-2 row-cols-md-5 py-5 my-5 border-top text-center">
+      <p class="text-muted">Savood © 2023</p>
+    </footer>
+  </div>
+
+</div>
+<!-- Vie app ends-->
+
+<script>
+
+  ORDER_API_URL = 'http://localhost:5004'
+  PLACE_ORDER_API_URL = 'http://localhost:5008'
+  
+  const app = Vue.createApp({
+      data() {
+        return {
+          userId: null,
+          userType: null,
+          userNameSession: null,
+          showCurrent: true,
+          showListing: false,
+          showHistory: false,
+          orders: null,
+          CurrentOrders: null,
+
+          //available orders
+          AvailableOrders: null,
+          available_message: null,
+
+          //placeorder
+          chosen_order_id: null,
+
+          // current
+          currentOrder: null,
+          current_message: null,
+
+          //history
+          previous_orders: null,
+          previous_message: null,
+
+          //mark order as done
+          chosen_done_order_id: null
+
+        };
+      },
+      methods: {
+        toggleCurrent() {
+          this.showCurrent = true;
+          this.showListing = false;
+          this.showHistory = false;
+          this.fetchCurrentOrders();
+        },
+        toggleListing() {
+          this.showCurrent = false;
+          this.showListing = true;
+          this.showHistory = false;
+          this.fetchAvailableOrders()
+        },
+        toggleHistory() {
+          this.showCurrent = false;
+          this.showListing = false;
+          this.showHistory = true;
+          this.fetchPreviousOrders();
+        },
+        async setChosenOrder(orderId) {
+          this.chosen_order_id = orderId;
+          console.log(this.chosen_order_id);
+          await this.submitPlaceOrder();
+          this.toggleCurrent();
+        },
+
+        async setDoneOrder(orderId) {
+          this.chosen_done_order_id = orderId;
+          console.log(this.chosen_done_order_id);
+          await this.submitDoneOrder();
+          this.toggleCurrent();
+        },
+
+        async fetchPreviousOrders() {
+          const serviceURL = `${ORDER_API_URL}/get_previous_orders/${this.userId}`;
+
+          try {
+            const response = await fetch(serviceURL, { method: 'GET' });
+            const result = await response.json();
+    
+            if (result.code === 200) {
+              this.previous_orders = result.data.orders;
+              this.previous_message = null;
+              console.log(this.previous_orders)
+            } else if (result.code === 404) {
+              this.previous_message = result.message;
+              this.previous_orders = null;
+            } else {
+              throw response.status;
+            }
+          } catch (error) {
+            console.log('error')
+            this.error = `There is a problem retrieving previous orders data, please try again later.<br />${error}`;
+          }
+        },
+
+        async fetchCurrentOrders(){
+          const serviceURL = `${ORDER_API_URL}/get_non_pending_or_done_orders/${this.userId}`;
+
+          try {
+            const response = await fetch(serviceURL, { method: 'GET' });
+            const result = await response.json();
+
+            console.log(result)
+
+            if (result.code === 200) {
+              this.CurrentOrders = result.orders;
+              this.current_message = null;
+              console.log(this.CurrentOrders);
+            } else if (result.code === 404) {
+              this.CurrentOrders = null;
+              this.current_message = result.message;
+            } else {
+              throw response.status;
+            }
+          } catch (error) {
+              console.log('error');
+              this.error = `There is a problem retrieving non-pending and non-done orders data, please try again later.<br />${error}`;
+          }
+        },
+
+        async fetchAvailableOrders(){
+          const serviceURL = `${PLACE_ORDER_API_URL}/load_orders/${this.userId}`;
+
+          try {
+            const response = await fetch(serviceURL, { method: 'GET' });
+            console.log(response.status)
+            const result = await response.json()
+            console.log(result)
+            if (result.code === 200) {
+                this.AvailableOrders = result.data;
+                this.available_message = null
+              } else if (result.code === 404) {
+                console.log('error 404');
+                this.available_message = 'Orders not found';
+                this.AvailableOrders = null ;
+              } else {
+                throw response.status;
+              }
+          } catch (error) {
+              console.log('error');
+              this.error = `There is a problem retrieving order data, please try again later.<br />${error}`;
+          }
+        },
+
+        async submitPlaceOrder() {
+          const serviceURL = `${PLACE_ORDER_API_URL}/place_order`;
+          try {
+            const response = await fetch(serviceURL, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                order_id: this.chosen_order_id,
+                foodbank_id: this.userId,
+              }),
+            });
+
+            result = await response.json();
+            console.log(result);
+            return Promise.resolve();
+          } catch (error) {
+            this.message = error.message;
+            return Promise.reject(error);
+          }
+        },
+
+        async submitDoneOrder() {
+          const serviceURL = `${ORDER_API_URL}/update_order_status`;
+          try {
+            const response = await fetch(serviceURL, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                order_id: this.chosen_done_order_id,
+                status: 'done'
+              }),
+            });
+
+            result = await response.json();
+            console.log(result);
+            return Promise.resolve();
+          } catch (error) {
+            this.message = error.message;
+            return Promise.reject(error);
+          }
+        }
+      },
+
+      created() {
+        const saveduserId = localStorage.getItem('userId');
+        const saveduserType = localStorage.getItem('userType');
+        const saveduserNameSession = localStorage.getItem('userNameSession')
+        console.log(saveduserId, saveduserType, saveduserNameSession)
+        if (saveduserId) {
+            this.userId = parseInt(saveduserId);
+        }
+        this.userType = saveduserType
+        this.userNameSession = saveduserNameSession
+        console.log(this.userId, this.userType, this.userNameSession)
+        if (!this.userId && this.userType != 'foodbank'){
+          window.location.href = './signUp.html'
+        }
+        this.toggleCurrent();
+      }
+
+    });
+
+</script>
+
+
+<!-- Import the Navbar and Footer components -->
+<script src="./UI_COMPONENTS/Navbar.js"></script>
+<!-- <script src="../UI_COMPONENTS/Footer.js"></script> -->
+
+<script>app.mount('#app');</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+
+</body>
+</html>
+
